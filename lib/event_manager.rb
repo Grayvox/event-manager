@@ -1,7 +1,18 @@
 # frozen_string_literal: true
 
+require 'csv'
+
 ATTENDEES = 'event_attendees.csv'
-contents = File.read(ATTENDEES) if File.exist? ATTENDEES
+if File.exist?(ATTENDEES)
+  contents = CSV.open(
+    ATTENDEES,
+    headers: true,
+    header_converters: :symbol
+  )
+end
 
 puts 'Event Manager Initialized!'
-puts contents
+contents.each do |row|
+  name = row[:first_name]
+  puts name
+end
