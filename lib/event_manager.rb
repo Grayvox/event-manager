@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'erb'
 require 'csv'
 require 'google/apis/civicinfo_v2'
 
@@ -8,19 +9,16 @@ def clean_zipcode(zipcode)
 end
 
 # rubocop:disable Metrics/MethodLength
-def legislators_by_zipcode(zipcode)
+def legislators_by_zipcode(zip)
   civic_info = Google::Apis::CivicinfoV2::CivicInfoService.new
   civic_info.key = 'AIzaSyClRzDqDh5MsXwnCWi0kOiiBivP6JsSyBw'
 
   begin
-    legislators = civic_info.representative_info_by_address(
-      address: zipcode,
+    civic_info.representative_info_by_address(
+      address: zip,
       levels: 'country',
-      roles: ['legislatorUpperBody', 'legislatorLowerBody']
-    )
-    legislators = legislators.officials
-    legislator_names = legislators.map(&:name)
-    legislator_names.join(", ")
+      roles: %w[legislatorUpperBody legislatorLowerBody]
+    ).officials
   rescue
     'You can find your representatives by visiting www.commoncause.org/take-action/find-elected-officials'
   end
@@ -36,7 +34,11 @@ if File.exist?(ATTENDEES)
   )
 end
 
-puts 'Event Manager Initialized!'
+puts 'Event Manager initialized!'
+
+template_letter = File.read('form_letter.erb')
+erb_template = ERB.new template_letter
+
 contents.each do |row|
   name = row[:first_name]
   zip = row[:zipcode]
@@ -45,5 +47,6 @@ contents.each do |row|
 
   legislators = legislators_by_zipcode(zip)
 
-  puts "#{name} - #{zipcode} - #{legislators}"
+  form_letter = erb_template.result(binding)
+  puts form_letter
 end
