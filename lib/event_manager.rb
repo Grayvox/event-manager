@@ -19,7 +19,7 @@ def legislators_by_zipcode(zip)
       levels: 'country',
       roles: %w[legislatorUpperBody legislatorLowerBody]
     ).officials
-  rescue
+  rescue StandardError
     'You can find your representatives by visiting www.commoncause.org/take-action/find-elected-officials'
   end
 end
