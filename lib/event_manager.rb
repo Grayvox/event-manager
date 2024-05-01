@@ -2,6 +2,7 @@
 
 require 'erb'
 require 'csv'
+require 'date'
 require 'google/apis/civicinfo_v2'
 
 def clean_zipcode(zipcode)
@@ -17,6 +18,23 @@ def clean_phone_number(number)
   else
     'No valid phone number found!'
   end
+end
+
+def find_most_common(array = [])
+  array.max_by { |element| array.count(element) }
+end
+
+def find_day_of_week(day_value)
+  days = {
+    0 => 'Sunday',
+    1 => 'Monday',
+    2 => 'Tuesday',
+    3 => 'Wednesday',
+    4 => 'Thursday',
+    5 => 'Friday',
+    6 => 'Saturday'
+  }
+  days[day_value]
 end
 
 # rubocop:disable Metrics/MethodLength
@@ -59,15 +77,27 @@ puts 'Event Manager initialized!'
 template_letter = File.read('form_letter.erb')
 erb_template = ERB.new template_letter
 
+reg_dates = []
+hours_collection = []
+days_collection = []
+
 contents.each do |row|
   id = row[0]
   name = row[:first_name]
+  date = row[:regdate]
 
   zipcode = clean_zipcode(row[:zipcode])
   phone_number = clean_phone_number(row[:homephone])
   legislators = legislators_by_zipcode(zipcode)
   form_letter = erb_template.result(binding)
 
+  date_time = Time.strptime(date, '%m/%d/%y %H:%M')
+  hours_collection.push(date_time.hour)
+  days_collection.push(date_time.wday)
+
   puts phone_number
   save_thank_you_letter(id, form_letter)
 end
+
+puts "The most common HOUR of registration is #{find_most_common(hours_collection)}"
+puts "The most common DAY OF THE WEEK for registration is #{find_day_of_week(find_most_common(days_collection))}"
